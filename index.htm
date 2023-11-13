@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water water</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #87CEEB;
+            transition: background-color 2s ease;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        #pixelText {
+            font-size: 24px;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1;
+        }
+
+        #leafCard {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            width: 50vw;
+            height: 50vh;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            cursor: pointer;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        #envelope {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateY(180deg);
+            width: 50vw;
+            height: 50vh;
+            background-color: #F5DEB3; /* Wheat color */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 3;
+            cursor: pointer;
+            animation: flipIn 1s forwards;
+        }
+
+        #letterCard {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateY(180deg);
+            width: 50vw;
+            height: 50vh;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 4;
+            cursor: pointer;
+            animation: flipIn 1s forwards;
+        }
+
+        #letterText {
+            font-size: 16px;
+            letter-spacing: 1px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes flipIn {
+            from {
+                transform: translate(-50%, -50%) rotateY(180deg);
+            }
+            to {
+                transform: translate(-50%, -50%) rotateY(0deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="pondCanvas"></canvas>
+    <div id="leafCard"></div>
+    <div id="envelope">
+        <div id="letterCard">
+            <div id="letterText">"Under the stars, the messenger <a href = "hbd/index.html">awaits</a></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('pondCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pixelSize = 10; // Adjust pixel size
+            const pixelColor = '#1E90FF';
+            const speed = 2;
+            let leaves = [];
+            let leafFrequency = 0.01;
+            let letters = [];
+            let letterFrequency = 0.002;
+            let ripples = [];
+            const rippleMaxSize = 150;
+            const rippleSpeed = 1;
+            const rippleSpawnPoints = generateRandomPoints(5);
+            let isConcentricRipplesActive = false;
+
+            function initializePixels() {
+                for (let x = 0; x < canvas.width; x += pixelSize) {
+                    for (let y = 0; y < canvas.height; y += pixelSize) {
+                        drawPixel(x, y);
+                    }
+                }
+            }
+
+            function drawPixel(x, y) {
+                ctx.fillStyle = pixelColor;
+                ctx.fillRect(x, y, pixelSize, pixelSize);
+            }
+
+            function drawPondSurface() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw ripples
+                for (const ripple of ripples) {
+                    ctx.beginPath();
+                    ctx.arc(ripple.x, ripple.y, ripple.size, 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 255, 255, ${ripple.alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.closePath();
+
+                    ripple.size += rippleSpeed;
+                    ripple.alpha -= 0.01;
+
+                    if (ripple.size > rippleMaxSize) {
+                        resetRipple(ripple);
+                    }
+                }
+
+                // Draw leaves
+                for (const leaf of leaves) {
+                    drawLeaf(leaf.x, leaf.y, leaf.size, leaf.envelopeOpen);
+                    leaf.x += leaf.xOffset;
+                    leaf.y += leaf.yOffset;
+
+                    if (leaf.x > canvas.width || leaf.y > canvas.height) {
+                        resetLeaf(leaf);
+                    }
+                }
+
+                // Draw letters
+                for (const letter of letters) {
+                    drawLeaf(letter.x, letter.y, letter.size, letter.envelopeOpen, letter.text);
+                    letter.x += letter.xOffset;
+                    letter.y += letter.yOffset;
+
+                    if (letter.x > canvas.width || letter.y > canvas.height) {
+                        resetLetter(letter);
+                    }
+                }
+
+                requestAnimationFrame(drawPondSurface);
+            }
+
+            function drawLeaf(x, y, size, envelopeOpen, text) {
+                const img = new Image();
+                img.src = 'leaf.png'; // Replace 'leaf.png' with the path to your leaf image
+
+                // Draw leaf
+                ctx.drawImage(img, x - size, y - size * 3, size * 2, size * 3);
+
+                // Draw envelope
+                ctx.beginPath();
+                ctx.moveTo(x - size, y - size * 2);
+                ctx.lineTo(x - size, y - size * 3);
+                ctx.lineTo(x + size, y - size * 3);
+                ctx.lineTo(x + size, y - size * 2);
+
+                if (envelopeOpen) {
+                    ctx.lineTo(x, y - size * 4);
+                } else {
+                    ctx.lineTo(x, y - size * 3);
+                }
+
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.7)'; // Gold color with some transparency
+                ctx.fill();
+                ctx.closePath();
+
+                // Draw text in the envelope
+                if (envelopeOpen && text) {
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(text, x - size + 10, y - size * 2.5);
+                }
+            }
+
+            function resetLeaf(leaf) {
+                leaf.x = Math.random() * canvas.width;
+                leaf.y = 0;
+                leaf.xOffset = (Math.random() - 0.5) * speed;
+                leaf.yOffset = Math.random() * speed;
+                leaf.size = Math.random() * 10 + 15;
+                leaf.envelopeOpen = false;
+            }
+
+            function createLeaf() {
+                if (Math.random() < leafFrequency) {
+                    const leaf = {
+                        x: Math.random() * canvas.width,
+                        y: 0,
+                        xOffset: (Math.random() - 0.5) * speed,
+                        yOffset: Math.random() * speed,
+                        size: Math.random() * 10 + 15,
+                        envelopeOpen: false
+                    };
+                    leaves.push(leaf);
+                }
+            }
+
+            function resetLetter(letter) {
+                letter.x = Math.random() * canvas.width;
+                letter.y = 0;
+                letter.xOffset = (Math.random() - 0.5) * speed;
+                letter.yOffset = Math.random() * speed;
+                letter.size = Math.random() * 10 + 15;
+                letter.envelopeOpen = false;
+            }
+
+            function createLetter() {
+                if (Math.random() < letterFrequency) {
+                    const letter = {
+                        x: Math.random() * canvas.width,
+                        y: 0,
+                        xOffset: (Math.random() - 0.5) * speed,
+                        yOffset: Math.random() * speed,
+                        size: Math.random() * 10 + 15,
+                        envelopeOpen: false,
+                        text: "Hi, I am a letter"
+                    };
+                    letters.push(letter);
+                }
+            }
+
+            function resetRipple(ripple) {
+                ripple.x = canvas.width / 2;
+                ripple.y = canvas.height / 2;
+                ripple.size = 0;
+                ripple.alpha = 1;
+            }
+
+            function createRipple(x, y) {
+                const ripple = {
+                    x,
+                    y,
+                    size: 0,
+                    alpha: 1
+                };
+                ripples.push(ripple);
+            }
+
+            function startConcentricRipples(x, y) {
+                isConcentricRipplesActive = true;
+                createRipple(x, y);
+
+                setTimeout(() => {
+                    isConcentricRipplesActive = false;
+                }, 5000);
+            }
+
+            function handleMouseClick(event) {
+                const mouseX = event.clientX;
+                const mouseY = event.clientY;
+
+                // Check if a leaf was clicked
+                for (const leaf of leaves) {
+                    const leafXStart = leaf.x - leaf.size;
+                    const leafXEnd = leaf.x + leaf.size;
+                    const leafYStart = leaf.y - leaf.size * 3;
+                    const leafYEnd = leaf.y;
+
+                    if (mouseX >= leafXStart && mouseX <= leafXEnd && mouseY >= leafYStart && mouseY <= leafYEnd) {
+                        // Display a white card covering 50% of the screen
+                        displayLeafCard();
+                        break;
+                    }
+                }
+            }
+
+            function generateRandomPoints(count) {
+                const points = [];
+                for (let i = 0; i < count; i++) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    points.push({ x, y });
+                }
+                return points;
+            }
+
+            function displayLeafCard() {
+                const leafCard = document.getElementById('leafCard');
+                leafCard.style.display =                 'block';
+                leafCard.addEventListener('click', function () {
+                    leafCard.style.animation = 'flipOut 1s forwards';
+                    setTimeout(() => {
+                        leafCard.style.display = 'none';
+                        envelope.style.display = 'block';
+                        envelope.style.animation = 'flipIn 1s forwards';
+                    }, 1000);
+                });
+            }
+
+            initializePixels();
+            drawPondSurface();
+
+            // Change background color to sunset colors after a delay
+            setTimeout(() => {
+                document.body.style.backgroundColor = '#FF6347'; // Tomato color
+                setInterval(() => { leafFrequency += 0.005; }, 2000); // Increase leaf frequency every 5 seconds
+                setInterval(() => { letterFrequency += 0.001; }, 8000); // Increase letter frequency every 8 seconds
+                setInterval(createLeaf, 500);
+                setInterval(createLetter, 2000);
+                setInterval(() => {
+                    for (const point of rippleSpawnPoints) {
+                        if (!isConcentricRipplesActive) {
+                            createRipple(point.x, point.y);
+                        }
+                    }
+                }, 3000); // Create ripples at multiple spawn points every 3 seconds
+            }, 5000);
+
+            window.addEventListener('resize', function () {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+
+            window.addEventListener('click', handleMouseClick);
+        });
+    </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+
+        const envelope = document.getElementById('envelope');
+        const letterCard = document.getElementById('letterCard');
+        const letterText = document.getElementById('letterText');
+
+        envelope.addEventListener('click', function () {
+            envelope.style.animation = 'flipOut 1s forwards';
+            setTimeout(() => {
+                envelope.style.display = 'none';
+                letterCard.style.display = 'block';
+                letterText.style.transform = 'rotateY(0deg)';
+                letterCard.style.animation = 'flipIn 1s forwards';
+            }, 1000);
+        });
+    });
+</script>
+
+
+</body>
+</html>
+
