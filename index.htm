@@ -12,7 +12,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #87CEEB;
+            background-color: #87CEFA; /* Light blue background color */
             transition: background-color 2s ease;
         }
 
@@ -81,13 +81,16 @@
             z-index: 4;
             cursor: pointer;
             animation: flipIn 1s forwards;
+            text-align: center; /* Add this line for horizontal centering */
         }
 
         #letterText {
             font-size: 16px;
             letter-spacing: 1px;
             padding: 20px;
-            text-align: center;
+            text-align: center; /* Add this line for horizontal centering */
+            line-height: 1.5; /* Add this line for better vertical centering */
+            font-family: sans-serif; /* Use sans-serif font */
         }
 
         @keyframes fadeIn {
@@ -115,7 +118,7 @@
     <div id="leafCard"></div>
     <div id="envelope">
         <div id="letterCard">
-            <div id="letterText">"Under the stars, the messenger <a href = "hbd/index.html">awaits</a></div>
+            <div id="letterText">Among all the years the last trio got a special day to remember.<br/> A day to celebrate the moments of pure bliss. The first one went unaware, the second got nothing much.<br/>Is it breaking the trend?<br/>Another roullete of exciting adventures, triumphs, cool shots, jaw droping editing all thank this day.<br/><br/>"Under the stars, the messenger <a href = "hbd/index.html"> awaits."</a></div>
         </div>
     </div>
 
@@ -159,7 +162,7 @@
                 for (const ripple of ripples) {
                     ctx.beginPath();
                     ctx.arc(ripple.x, ripple.y, ripple.size, 0, Math.PI * 2);
-                    ctx.strokeStyle = `rgba(255, 255, 255, ${ripple.alpha})`;
+                    ctx.strokeStyle = `rgba(119, 195, 236, ${ripple.alpha})`;
                     ctx.lineWidth = 2;
                     ctx.stroke();
                     ctx.closePath();
@@ -349,7 +352,7 @@
 
             // Change background color to sunset colors after a delay
             setTimeout(() => {
-                document.body.style.backgroundColor = '#FF6347'; // Tomato color
+                document.body.style.backgroundColor = '#B8E2F2 '; // Tomato color
                 setInterval(() => { leafFrequency += 0.005; }, 2000); // Increase leaf frequency every 5 seconds
                 setInterval(() => { letterFrequency += 0.001; }, 8000); // Increase letter frequency every 8 seconds
                 setInterval(createLeaf, 500);
