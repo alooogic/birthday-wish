@@ -68,7 +68,7 @@
         }
 
         #letterCard {
-            display: none;
+            display: flex;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -82,15 +82,18 @@
             cursor: pointer;
             animation: flipIn 1s forwards;
             text-align: center; /* Add this line for horizontal centering */
+            justify-content: center;
+            align-items: center;
         }
 
         #letterText {
-            font-size: 16px;
+            font-size: 14px;
             letter-spacing: 1px;
             padding: 20px;
-            text-align: center; /* Add this line for horizontal centering */
-            line-height: 1.5; /* Add this line for better vertical centering */
-            font-family: sans-serif; /* Use sans-serif font */
+            text-align: center;
+            line-height: 1.5;
+            font-family: sans-serif;
+            margin: 0; /* Reset margin */
         }
 
         @keyframes fadeIn {
@@ -207,22 +210,6 @@
                 // Draw leaf
                 ctx.drawImage(img, x - size, y - size * 3, size * 2, size * 3);
 
-                // Draw envelope
-                ctx.beginPath();
-                ctx.moveTo(x - size, y - size * 2);
-                ctx.lineTo(x - size, y - size * 3);
-                ctx.lineTo(x + size, y - size * 3);
-                ctx.lineTo(x + size, y - size * 2);
-
-                if (envelopeOpen) {
-                    ctx.lineTo(x, y - size * 4);
-                } else {
-                    ctx.lineTo(x, y - size * 3);
-                }
-
-                ctx.fillStyle = 'rgba(255, 215, 0, 0.7)'; // Gold color with some transparency
-                ctx.fill();
-                ctx.closePath();
 
                 // Draw text in the envelope
                 if (envelopeOpen && text) {
@@ -241,8 +228,10 @@
                 leaf.envelopeOpen = false;
             }
 
+            let maxLeaves = 50;
+
             function createLeaf() {
-                if (Math.random() < leafFrequency) {
+                if (leaves.length < maxLeaves && Math.random() < leafFrequency) {
                     const leaf = {
                         x: Math.random() * canvas.width,
                         y: 0,
